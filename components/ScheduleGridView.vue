@@ -1,7 +1,7 @@
 <template>
   <div class="grid-view">
     <div class="scroll-area">
-      <div class="grid" :style="{ gridTemplateRows: `auto repeat(${periods.length}, 1fr)` }">
+      <div class="grid" :style="{ gridTemplateColumns: `3.2rem repeat(${days.length}, minmax(3rem, 1fr))`, gridTemplateRows: `auto repeat(${periods.length}, 1fr)` }">
         <div class="cell corner"></div>
         <div
           v-for="d in days"
@@ -42,6 +42,7 @@ import type { ScheduleItem } from "~/composables/useSchedule";
 const props = defineProps<{
   schedules: ScheduleItem[];
   maxPeriod: number;
+  showWeekend: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -49,7 +50,7 @@ const emit = defineEmits<{
   (event: "add", payload: { day: string; period: number }): void;
 }>();
 
-const days = [
+const allDays = [
   { key: "Monday", label: "月" },
   { key: "Tuesday", label: "火" },
   { key: "Wednesday", label: "水" },
@@ -58,6 +59,10 @@ const days = [
   { key: "Saturday", label: "土" },
   { key: "Sunday", label: "日" },
 ] as const;
+
+const days = computed(() =>
+  props.showWeekend ? allDays : allDays.filter((d) => d.key !== "Saturday" && d.key !== "Sunday")
+);
 
 const dayIndexMap: Record<string, number> = {
   Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3,
@@ -90,7 +95,6 @@ const tapCell = (day: string, period: number) => {
 
 .grid {
   display: grid;
-  grid-template-columns: 3.2rem repeat(7, minmax(2.6rem, 1fr));
   border-radius: 14px;
   overflow: hidden;
   background: #0d0d10;

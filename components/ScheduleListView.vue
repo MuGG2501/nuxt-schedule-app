@@ -2,7 +2,7 @@
   <div class="list-view">
     <div class="day-tabs">
       <button
-        v-for="d in days"
+        v-for="d in filteredDays"
         :key="d.key"
         class="day-tab"
         :class="{ active: activeDay === d.key, today: isToday(d.key) }"
@@ -40,6 +40,7 @@ import type { ScheduleItem } from "~/composables/useSchedule";
 
 const props = defineProps<{
   schedules: ScheduleItem[];
+  showWeekend: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -67,6 +68,10 @@ const dayToKey: Record<number, string> = {
 };
 
 const isToday = (key: string) => new Date().getDay() === dayIndexMap[key];
+
+const filteredDays = computed(() =>
+  props.showWeekend ? days : days.filter((d) => d.key !== "Saturday" && d.key !== "Sunday")
+);
 
 const activeDay = ref(dayToKey[new Date().getDay()] || "Monday");
 

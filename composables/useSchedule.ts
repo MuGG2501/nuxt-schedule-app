@@ -11,6 +11,7 @@ export type ScheduleInput = {
 export type ScheduleItem = ScheduleInput & {
   id: string;
   absences: number;
+  memo: string;
   createdAt?: any;
 };
 
@@ -55,6 +56,7 @@ const loadSchedules = async () => {
         day: data.day ?? "Monday",
         period: data.period ?? 1,
         absences: data.absences ?? 0,
+        memo: data.memo ?? "",
         createdAt: data.createdAt,
       } as ScheduleItem;
     });
@@ -149,6 +151,22 @@ const updateAbsences = async (id: string, absences: number) => {
   }
 };
 
+const updateMemo = async (id: string, memo: string) => {
+  const db = getDb();
+  if (!db || !user.value?.uid) return;
+
+  const safeMemo = memo.slice(0, 500);
+
+  try {
+    await updateDoc(doc(db, "users", user.value.uid, "schedules", id), { memo: safeMemo });
+    const item = schedules.value.find((s) => s.id === id);
+    if (item) item.memo = safeMemo;
+  } catch (err) {
+    error.value = "メモの更新中にエラーが発生しました。";
+    console.error(err);
+  }
+};
+
 const maxPeriod = computed(() =>
   Math.max(4, ...schedules.value.map((s) => s.period))
 );
@@ -162,4 +180,5 @@ export const useSchedule = () => ({
   addSchedule,
   deleteSchedule,
   updateAbsences,
+  updateMemo,
 });

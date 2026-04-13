@@ -17,16 +17,26 @@
       <header class="top-bar">
         <span class="app-name">時間割</span>
         <div class="top-bar-right">
-          <span class="user-name">{{ user.displayName || user.email }}</span>
+          <button class="btn-icon" @click="showSettings = !showSettings" title="設定">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
           <button class="btn-icon" @click="handleLogout" title="ログアウト">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           </button>
         </div>
       </header>
 
+      <!-- 設定パネル -->
+      <div v-if="showSettings" class="settings-panel">
+        <label class="setting-row">
+          <span>土日を表示</span>
+          <input type="checkbox" v-model="showWeekend" class="toggle-check" />
+        </label>
+      </div>
+
       <div v-if="error" class="error-banner">{{ error }}</div>
 
-      <ScheduleList :schedules="schedules" :max-period="maxPeriod" @delete="deleteSchedule" @add="handleGridAdd" @update-absences="updateAbsences" />
+      <ScheduleList :schedules="schedules" :max-period="maxPeriod" :show-weekend="showWeekend" @delete="deleteSchedule" @add="handleGridAdd" @update-absences="updateAbsences" @update-memo="updateMemo" />
 
       <!-- FAB -->
       <button class="fab" @click="showModal = true" aria-label="時間割を追加">
@@ -56,14 +66,17 @@
 import { ref, watch } from "vue";
 import { useAuth } from "~/composables/useFirebase";
 import { useSchedule } from "~/composables/useSchedule";
+import { useSettings } from "~/composables/useSettings";
 import ScheduleForm from "~/components/ScheduleForm.vue";
 import ScheduleList from "~/components/ScheduleList.vue";
 
 const authError = ref("");
 const showModal = ref(false);
+const showSettings = ref(false);
 const prefill = ref<{ day: string; period: number } | null>(null);
 const { user, login, logout } = useAuth();
-const { schedules, loading, error, maxPeriod, loadSchedules, addSchedule, deleteSchedule, updateAbsences } = useSchedule();
+const { schedules, loading, error, maxPeriod, loadSchedules, addSchedule, deleteSchedule, updateAbsences, updateMemo } = useSchedule();
+const { showWeekend } = useSettings();
 
 const handleSubmitModal = async (payload: { title: string; day: string; period: number }) => {
   await addSchedule(payload);
@@ -209,16 +222,57 @@ watch(
 .top-bar-right {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.35rem;
 }
 
-.user-name {
-  color: #71717a;
-  font-size: 0.8rem;
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.settings-panel {
+  padding: 0.5rem 1rem;
+  background: #111113;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.25rem;
+  font-size: 0.9rem;
+  color: #a1a1aa;
+  cursor: pointer;
+}
+
+.toggle-check {
+  width: 2.6rem;
+  height: 1.5rem;
+  appearance: none;
+  -webkit-appearance: none;
+  background: #27272a;
+  border-radius: 999px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: none;
+}
+
+.toggle-check::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 1.1rem;
+  height: 1.1rem;
+  background: #71717a;
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.toggle-check:checked {
+  background: #6d28d9;
+}
+
+.toggle-check:checked::after {
+  transform: translateX(1.1rem);
+  background: #fafafa;
 }
 
 .btn-icon {

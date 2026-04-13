@@ -24,10 +24,12 @@ service cloud.firestore {
 
       allow update: if request.auth != null
         && request.auth.uid == userId
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['absences'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['absences', 'memo'])
         && request.resource.data.absences is int
         && request.resource.data.absences >= 0
-        && request.resource.data.absences <= 999;
+        && request.resource.data.absences <= 999
+        && request.resource.data.memo is string
+        && request.resource.data.memo.size() <= 500;
 
       allow delete: if request.auth != null && request.auth.uid == userId;
     }

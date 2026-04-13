@@ -32,6 +32,7 @@
       <ScheduleListView
         v-if="viewMode === 'list'"
         :schedules="schedules"
+        :show-weekend="showWeekend"
         @select="selected = $event"
       />
 
@@ -40,6 +41,7 @@
         v-if="viewMode === 'grid'"
         :schedules="schedules"
         :max-period="maxPeriod"
+        :show-weekend="showWeekend"
         @select="selected = $event"
         @add="emit('add', $event)"
       />
@@ -67,6 +69,17 @@
               <button class="absence-btn" @click="changeAbsences(1)">＋</button>
             </div>
           </div>
+          <div class="memo-section">
+            <label class="memo-label">課題メモ</label>
+            <textarea
+              class="memo-input"
+              :value="selected.memo"
+              @input="handleMemoInput"
+              placeholder="課題やメモを入力..."
+              rows="3"
+              maxlength="500"
+            ></textarea>
+          </div>
           <button class="btn-delete" @click="handleDelete(selected.id)">この時間割を削除</button>
         </div>
       </div>
@@ -78,11 +91,12 @@
 import { ref } from "vue";
 import type { ScheduleItem } from "~/composables/useSchedule";
 
-const props = defineProps<{ schedules: ScheduleItem[]; maxPeriod: number }>();
+const props = defineProps<{ schedules: ScheduleItem[]; maxPeriod: number; showWeekend: boolean }>();
 const emit = defineEmits<{
   (event: "delete", id: string): void;
   (event: "add", payload: { day: string; period: number }): void;
   (event: "update-absences", id: string, absences: number): void;
+  (event: "update-memo", id: string, memo: string): void;
 }>();
 
 const selected = ref<ScheduleItem | null>(null);
@@ -98,6 +112,17 @@ const changeAbsences = (delta: number) => {
   const next = Math.max(0, selected.value.absences + delta);
   selected.value.absences = next;
   emit("update-absences", selected.value.id, next);
+};
+
+let memoTimer: ReturnType<typeof setTimeout> | null = null;
+const handleMemoInput = (e: Event) => {
+  if (!selected.value) return;
+  const val = (e.target as HTMLTextAreaElement).value;
+  selected.value.memo = val;
+  if (memoTimer) clearTimeout(memoTimer);
+  memoTimer = setTimeout(() => {
+    if (selected.value) emit("update-memo", selected.value.id, val);
+  }, 600);
 };
 
 const formatDay = (v: string) =>
@@ -283,6 +308,45 @@ const formatDay = (v: string) =>
   min-width: 1.5rem;
   text-align: center;
   color: #fafafa;
+}
+
+/* ===== Memo ===== */
+.memo-section {
+  margin-top: 0.75rem;
+}
+
+.memo-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.35rem;
+}
+
+.memo-input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  background: #18181b;
+  color: #fafafa;
+  resize: vertical;
+  min-height: 3.5rem;
+  font-family: inherit;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.memo-input:focus {
+  outline: none;
+  border-color: #6d28d9;
+}
+
+.memo-input::placeholder {
+  color: #52525b;
 }
 
 .btn-delete {
