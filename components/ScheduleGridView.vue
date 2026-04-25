@@ -1,5 +1,15 @@
 <template>
   <div class="grid-view">
+    <div class="grid-header">
+      <div>
+        <p class="grid-kicker">Grid view</p>
+        <h2 class="grid-title">週の時間割</h2>
+      </div>
+      <div class="grid-legend">
+        <span class="legend-item"><i class="legend-dot filled"></i>授業あり</span>
+        <span class="legend-item"><i class="legend-dot today"></i>今日</span>
+      </div>
+    </div>
     <div class="scroll-area">
       <div class="grid" :style="{ gridTemplateColumns: `3.2rem repeat(${days.length}, minmax(3rem, 1fr))`, gridTemplateRows: `auto repeat(${periods.length}, 1fr)` }">
         <div class="cell corner"></div>
@@ -26,6 +36,7 @@
           >
             <template v-if="getItem(d.key, p)">
               <span class="subject">{{ getItem(d.key, p)!.title }}</span>
+              <span v-if="getItem(d.key, p)!.memo" class="memo-dot"></span>
               <span v-if="getItem(d.key, p)!.absences > 0" class="absence-badge">{{ getItem(d.key, p)!.absences }}欠</span>
             </template>
           </div>
@@ -42,7 +53,6 @@ import type { ScheduleItem } from "~/composables/useSchedule";
 const props = defineProps<{
   schedules: ScheduleItem[];
   maxPeriod: number;
-  showWeekend: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -50,19 +60,13 @@ const emit = defineEmits<{
   (event: "add", payload: { day: string; period: number }): void;
 }>();
 
-const allDays = [
+const days = [
   { key: "Monday", label: "月" },
   { key: "Tuesday", label: "火" },
   { key: "Wednesday", label: "水" },
   { key: "Thursday", label: "木" },
   { key: "Friday", label: "金" },
-  { key: "Saturday", label: "土" },
-  { key: "Sunday", label: "日" },
 ] as const;
-
-const days = computed(() =>
-  props.showWeekend ? allDays : allDays.filter((d) => d.key !== "Saturday" && d.key !== "Sunday")
-);
 
 const dayIndexMap: Record<string, number> = {
   Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3,
@@ -87,6 +91,60 @@ const tapCell = (day: string, period: number) => {
 </script>
 
 <style scoped>
+.grid-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1rem 0.2rem;
+}
+
+.grid-kicker {
+  margin: 0 0 0.2rem;
+  color: #8b5cf6;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.grid-title {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+.grid-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #a1a1aa;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.legend-dot {
+  width: 0.58rem;
+  height: 0.58rem;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.legend-dot.filled {
+  background: rgba(109, 40, 217, 0.85);
+}
+
+.legend-dot.today {
+  background: rgba(139, 92, 246, 0.42);
+}
+
 .scroll-area {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -107,10 +165,10 @@ const tapCell = (day: string, period: number) => {
   justify-content: center;
   align-items: center;
   padding: 0.5rem 0.25rem;
-  min-height: 3rem;
+  min-height: 4rem;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  gap: 0.15rem;
+  gap: 0.25rem;
   transition: background 0.12s;
 }
 
@@ -180,10 +238,19 @@ const tapCell = (day: string, period: number) => {
 .subject {
   color: #e4e4e7;
   font-weight: 700;
-  font-size: 0.72rem;
-  line-height: 1.25;
+  font-size: 0.75rem;
+  line-height: 1.35;
   text-align: center;
-  word-break: break-all;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.memo-dot {
+  width: 0.32rem;
+  height: 0.32rem;
+  border-radius: 999px;
+  background: #67e8f9;
+  box-shadow: 0 0 0 4px rgba(103, 232, 249, 0.08);
 }
 
 .absence-badge {

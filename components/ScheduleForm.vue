@@ -1,5 +1,11 @@
 <template>
   <form @submit.prevent="submitForm" class="form">
+    <div class="form-head">
+      <p class="form-kicker">Quick add</p>
+      <h3 class="form-title">授業を追加</h3>
+      <p class="form-sub">曜日と時限を選ぶだけで、グリッドにもすぐ反映されます。</p>
+    </div>
+
     <div class="field">
       <label>科目 / イベント</label>
       <input
@@ -86,6 +92,34 @@ watch(
 .form {
   display: grid;
   gap: 1rem;
+}
+
+.form-head {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.2rem;
+}
+
+.form-kicker {
+  margin: 0;
+  color: #8b5cf6;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.form-title {
+  margin: 0;
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+}
+
+.form-sub {
+  margin: 0;
+  color: #8a8a95;
+  font-size: 0.86rem;
+  line-height: 1.6;
 }
 
 .field {

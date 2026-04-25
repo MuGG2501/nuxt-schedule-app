@@ -15,28 +15,44 @@
     <!-- ログイン後 -->
     <div v-else class="app-shell">
       <header class="top-bar">
-        <span class="app-name">時間割</span>
+        <div class="top-bar-copy">
+          <span class="app-kicker">Schedule board</span>
+          <span class="app-name">時間割</span>
+        </div>
         <div class="top-bar-right">
-          <button class="btn-icon" @click="showSettings = !showSettings" title="設定">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          </button>
           <button class="btn-icon" @click="handleLogout" title="ログアウト">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           </button>
         </div>
       </header>
 
-      <!-- 設定パネル -->
-      <div v-if="showSettings" class="settings-panel">
-        <label class="setting-row">
-          <span>土日を表示</span>
-          <input type="checkbox" v-model="showWeekend" class="toggle-check" />
-        </label>
-      </div>
+      <section class="hero-panel">
+        <div class="hero-copy">
+          <span class="hero-chip">{{ visibleDayCount }}日表示</span>
+          <h1 class="hero-title">週の予定と課題を一画面で把握</h1>
+          <p class="hero-sub">授業数、欠席、メモ件数をまとめて確認できます。空きコマはそのまま追加、登録済みコマは詳細から管理できます。</p>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-card accent">
+            <span class="stat-label">授業数</span>
+            <strong class="stat-value">{{ schedules.length }}</strong>
+          </div>
+          <div class="stat-card warm">
+            <span class="stat-label">欠席合計</span>
+            <strong class="stat-value">{{ absenceTotal }}</strong>
+          </div>
+          <div class="stat-card cool">
+            <span class="stat-label">メモあり</span>
+            <strong class="stat-value">{{ memoCount }}</strong>
+          </div>
+        </div>
+      </section>
 
       <div v-if="error" class="error-banner">{{ error }}</div>
 
-      <ScheduleList :schedules="schedules" :max-period="maxPeriod" :show-weekend="showWeekend" @delete="deleteSchedule" @add="handleGridAdd" @update-absences="updateAbsences" @update-memo="updateMemo" />
+      <section class="content-shell">
+        <ScheduleList :schedules="schedules" :max-period="maxPeriod" @delete="deleteSchedule" @add="handleGridAdd" @update-absences="updateAbsences" @update-memo="updateMemo" />
+      </section>
 
       <!-- FAB -->
       <button class="fab" @click="showModal = true" aria-label="時間割を追加">
@@ -63,20 +79,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useAuth } from "~/composables/useFirebase";
 import { useSchedule } from "~/composables/useSchedule";
-import { useSettings } from "~/composables/useSettings";
 import ScheduleForm from "~/components/ScheduleForm.vue";
 import ScheduleList from "~/components/ScheduleList.vue";
 
 const authError = ref("");
 const showModal = ref(false);
-const showSettings = ref(false);
 const prefill = ref<{ day: string; period: number } | null>(null);
 const { user, login, logout } = useAuth();
 const { schedules, loading, error, maxPeriod, loadSchedules, addSchedule, deleteSchedule, updateAbsences, updateMemo } = useSchedule();
-const { showWeekend } = useSettings();
+
+const memoCount = computed(() => schedules.value.filter((item) => item.memo.trim()).length);
+const absenceTotal = computed(() => schedules.value.reduce((total, item) => total + item.absences, 0));
+const visibleDayCount = 5;
 
 const handleSubmitModal = async (payload: { title: string; day: string; period: number }) => {
   await addSchedule(payload);
@@ -133,6 +150,19 @@ watch(
 
 .app-shell {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.app-shell::before {
+  content: "";
+  position: fixed;
+  inset: -20% auto auto 50%;
+  width: 32rem;
+  height: 32rem;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(109, 40, 217, 0.18), rgba(109, 40, 217, 0) 65%);
+  pointer-events: none;
+  filter: blur(24px);
+  z-index: 0;
 }
 
 /* ===== Login ===== */
@@ -213,6 +243,20 @@ watch(
   z-index: 30;
 }
 
+.top-bar-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.app-kicker {
+  color: #8b5cf6;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
 .app-name {
   font-weight: 800;
   font-size: 1.2rem;
@@ -225,54 +269,101 @@ watch(
   gap: 0.35rem;
 }
 
-.settings-panel {
-  padding: 0.5rem 1rem;
-  background: #111113;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.setting-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.6rem 0.25rem;
-  font-size: 0.9rem;
-  color: #a1a1aa;
-  cursor: pointer;
-}
-
-.toggle-check {
-  width: 2.6rem;
-  height: 1.5rem;
-  appearance: none;
-  -webkit-appearance: none;
-  background: #27272a;
-  border-radius: 999px;
+.hero-panel {
   position: relative;
-  cursor: pointer;
-  transition: background 0.2s;
-  border: none;
+  z-index: 1;
+  margin: 1rem;
+  padding: 1.15rem;
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(109, 40, 217, 0.18), rgba(14, 14, 18, 0.96) 46%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
 }
 
-.toggle-check::after {
-  content: '';
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 1.1rem;
-  height: 1.1rem;
-  background: #71717a;
-  border-radius: 50%;
-  transition: transform 0.2s, background 0.2s;
+.hero-copy {
+  display: grid;
+  gap: 0.65rem;
 }
 
-.toggle-check:checked {
-  background: #6d28d9;
+.hero-chip {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.38rem 0.72rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ddd6fe;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 
-.toggle-check:checked::after {
-  transform: translateX(1.1rem);
-  background: #fafafa;
+.hero-title {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.hero-sub {
+  margin: 0;
+  color: #b4b4bd;
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.stat-card {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.9rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-card.accent {
+  background: linear-gradient(180deg, rgba(109, 40, 217, 0.3), rgba(109, 40, 217, 0.12));
+}
+
+.stat-card.warm {
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.22), rgba(239, 68, 68, 0.08));
+}
+
+.stat-card.cool {
+  background: linear-gradient(180deg, rgba(6, 182, 212, 0.2), rgba(6, 182, 212, 0.08));
+}
+
+.stat-label {
+  color: #b4b4bd;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.content-shell {
+  position: relative;
+  z-index: 1;
+  margin: 0 1rem;
+  padding: 0.35rem 0 0;
+  border-radius: 24px;
+  background: rgba(17, 17, 19, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
 }
 
 .btn-icon {
@@ -403,6 +494,19 @@ watch(
     padding-top: 0.75rem;
   }
 
+  .hero-panel {
+    padding: 1.4rem;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+    max-width: 14ch;
+  }
+
+  .hero-sub {
+    max-width: 56ch;
+  }
+
   .login-screen {
     padding-top: 2rem;
   }
@@ -421,6 +525,10 @@ watch(
   .fab:hover {
     transform: translateY(-2px) scale(1.04);
     box-shadow: 0 12px 36px rgba(109, 40, 217, 0.55);
+  }
+
+  .content-shell {
+    padding-top: 0.5rem;
   }
 
   .sheet-backdrop {

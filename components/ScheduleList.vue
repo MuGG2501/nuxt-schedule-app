@@ -32,7 +32,6 @@
       <ScheduleListView
         v-if="viewMode === 'list'"
         :schedules="schedules"
-        :show-weekend="showWeekend"
         @select="selected = $event"
       />
 
@@ -41,7 +40,6 @@
         v-if="viewMode === 'grid'"
         :schedules="schedules"
         :max-period="maxPeriod"
-        :show-weekend="showWeekend"
         @select="selected = $event"
         @add="emit('add', $event)"
       />
@@ -52,6 +50,10 @@
       <div v-if="selected" class="sheet-backdrop" @click.self="selected = null">
         <div class="sheet">
           <div class="sheet-handle"></div>
+          <div class="sheet-topline">
+            <span class="sheet-pill">{{ formatDay(selected.day) }}</span>
+            <span class="sheet-pill muted">{{ selected.period }}限</span>
+          </div>
           <div class="sheet-row">
             <div>
               <h3 class="sheet-title">{{ selected.title }}</h3>
@@ -91,7 +93,7 @@
 import { ref } from "vue";
 import type { ScheduleItem } from "~/composables/useSchedule";
 
-const props = defineProps<{ schedules: ScheduleItem[]; maxPeriod: number; showWeekend: boolean }>();
+const props = defineProps<{ schedules: ScheduleItem[]; maxPeriod: number }>();
 const emit = defineEmits<{
   (event: "delete", id: string): void;
   (event: "add", payload: { day: string; period: number }): void;
@@ -217,6 +219,28 @@ const formatDay = (v: string) =>
   margin: 0.35rem auto 1rem;
 }
 
+.sheet-topline {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.sheet-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(109, 40, 217, 0.18);
+  color: #ddd6fe;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.sheet-pill.muted {
+  background: rgba(255, 255, 255, 0.06);
+  color: #d4d4d8;
+}
+
 .sheet-row {
   display: flex;
   justify-content: space-between;
@@ -226,8 +250,9 @@ const formatDay = (v: string) =>
 
 .sheet-title {
   margin: 0;
-  font-size: 1.15rem;
-  font-weight: 700;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .sheet-meta {
@@ -313,6 +338,9 @@ const formatDay = (v: string) =>
 /* ===== Memo ===== */
 .memo-section {
   margin-top: 0.75rem;
+  padding: 0.9rem 1rem 1rem;
+  border-radius: 14px;
+  background: #18181b;
 }
 
 .memo-label {
